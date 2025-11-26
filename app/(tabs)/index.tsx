@@ -245,7 +245,15 @@ export default function HomeScreen() {
               const daysUntilRelease = Math.ceil((releaseDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
               
               return (
-                <View key={product.id} style={styles.comingSoonCard}>
+                <TouchableOpacity 
+                  key={product.id} 
+                  style={styles.comingSoonCard}
+                  onPress={() => {
+                    marketing.trackConversion('coming_soon_product_clicked', { productId: product.id });
+                    router.push('/waitlist');
+                  }}
+                  activeOpacity={0.8}
+                >
                   <Image source={{ uri: product.image }} style={styles.comingSoonImage} />
                   <View style={styles.comingSoonOverlay}>
                     {product.exclusiveAccess && (
@@ -270,7 +278,7 @@ export default function HomeScreen() {
                       <Text style={styles.limitedText}>Only {product.totalMade} will be made</Text>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </ScrollView>
