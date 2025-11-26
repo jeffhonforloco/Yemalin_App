@@ -8,10 +8,12 @@ import {
   Image,
   Dimensions,
   Platform,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { Filter, ShoppingBag } from "lucide-react-native";
+import { Filter, ShoppingBag, X, Star } from "lucide-react-native";
 import { products } from "@/data/products";
 import { useCart } from "@/providers/CartProvider";
 
@@ -76,6 +78,15 @@ export default function ShopScreen() {
   const activeFiltersCount = filters.color.length + filters.size.length + 
     (filters.availability !== "all" ? 1 : 0);
 
+  const handleSaleBannerPress = () => {
+    console.log('Shop Now pressed - navigating to sale items');
+    setFilters({
+      color: [],
+      size: [],
+      availability: "all",
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
@@ -84,7 +95,7 @@ export default function ShopScreen() {
           style={styles.filterButton}
           onPress={() => setShowFilters(!showFilters)}
         >
-          <Filter size={20} color="#000" />
+          <Filter size={22} color="#1a1a1a" strokeWidth={1.5} />
           {activeFiltersCount > 0 && (
             <View style={styles.filterBadge}>
               <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
@@ -96,7 +107,7 @@ export default function ShopScreen() {
           style={styles.cartButton}
           onPress={() => router.push("/cart")}
         >
-          <ShoppingBag size={20} color="#000" />
+          <ShoppingBag size={22} color="#1a1a1a" strokeWidth={1.5} />
           {itemCount > 0 && (
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>{itemCount}</Text>
@@ -106,22 +117,39 @@ export default function ShopScreen() {
       </View>
       
       {/* Promotional Banner */}
-      <TouchableOpacity 
+      <Pressable 
         style={styles.promoBanner}
-        activeOpacity={0.95}
-        onPress={() => {
-          console.log('Sale banner clicked - showing all sale products');
-        }}
+        onPress={handleSaleBannerPress}
       >
-        <Text style={styles.promoText}>ED. SALE UP TO 70% OFF . MORE STYLES ADDED . SALE UP TO 70%</Text>
-        <View style={styles.promoButton}>
-          <Text style={styles.promoButtonText}>SHOP NOW</Text>
-        </View>
-      </TouchableOpacity>
+        <LinearGradient
+          colors={['#1a1a1a', '#000000']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.promoBannerGradient}
+        >
+          <Text style={styles.promoText}>ED. SALE UP TO 70% OFF . MORE STYLES ADDED . SALE UP TO 70%</Text>
+          <Pressable 
+            style={({ pressed }) => [
+              styles.promoButton,
+              pressed && styles.promoButtonPressed
+            ]}
+            onPress={handleSaleBannerPress}
+          >
+            <Text style={styles.promoButtonText}>SHOP NOW</Text>
+          </Pressable>
+        </LinearGradient>
+      </Pressable>
 
       {/* Filters */}
       {showFilters && (
         <View style={styles.filtersContainer}>
+          <View style={styles.filterHeader}>
+            <Text style={styles.filterHeaderTitle}>FILTER</Text>
+            <TouchableOpacity onPress={() => setShowFilters(false)}>
+              <X size={20} color="#1a1a1a" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.filterSection}>
             <Text style={styles.filterTitle}>COLOR</Text>
             <View style={styles.filterOptions}>
@@ -210,46 +238,74 @@ export default function ShopScreen() {
             </View>
           </View>
 
-          {activeFiltersCount > 0 && (
-            <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
-              <Text style={styles.clearButtonText}>CLEAR ALL</Text>
+          <View style={styles.filterActions}>
+            {activeFiltersCount > 0 && (
+              <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+                <Text style={styles.clearButtonText}>CLEAR ALL</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity 
+              style={styles.applyButton} 
+              onPress={() => setShowFilters(false)}
+            >
+              <Text style={styles.applyButtonText}>APPLY FILTERS</Text>
             </TouchableOpacity>
-          )}
+          </View>
         </View>
       )}
       
       {/* Products Grid */}
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.sectionTitleContainer}>
-          <Text style={styles.sectionTitle}>ALL COLLECTIONS</Text>
+          <View style={styles.sectionTitleRow}>
+            <Text style={styles.sectionTitle}>ALL COLLECTIONS</Text>
+            <View style={styles.productCount}>
+              <Text style={styles.productCountText}>{filteredProducts.length} PIECES</Text>
+            </View>
+          </View>
+          <Text style={styles.sectionSubtitle}>Curated luxury essentials</Text>
         </View>
         <View style={styles.productsGrid}>
           {filteredProducts.map((product) => (
-            <TouchableOpacity
+            <Pressable
               key={product.id}
-              style={styles.productCard}
+              style={({ pressed }) => [
+                styles.productCard,
+                pressed && styles.productCardPressed
+              ]}
               onPress={() => router.push(`/product/${product.id}`)}
-              activeOpacity={0.9}
             >
-              {product.stock <= 5 && product.stock > 0 && (
-                <View style={styles.newBadge}>
-                  <Text style={styles.newBadgeText}>NEW ARRIVAL</Text>
-                </View>
-              )}
-              <Image source={{ uri: product.image }} style={styles.productImage} testID="shopProductImage" />
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productPrice}>${product.price} USD</Text>
+              <View style={styles.imageContainer}>
                 {product.stock <= 5 && product.stock > 0 && (
-                  <Text style={styles.scarcityText}>Only {product.stock} left</Text>
+                  <View style={styles.newBadge}>
+                    <Star size={10} color="#fff" fill="#fff" />
+                    <Text style={styles.newBadgeText}>NEW</Text>
+                  </View>
                 )}
                 {product.stock === 0 && (
-                  <Text style={styles.soldOutText}>SOLD OUT</Text>
+                  <View style={styles.soldOutOverlay}>
+                    <Text style={styles.soldOutOverlayText}>SOLD OUT</Text>
+                  </View>
+                )}
+                <Image source={{ uri: product.image }} style={styles.productImage} testID="shopProductImage" />
+              </View>
+              <View style={styles.productInfo}>
+                <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+                <View style={styles.priceRow}>
+                  <Text style={styles.productPrice}>${product.price}</Text>
+                  <Text style={styles.currencyText}>USD</Text>
+                </View>
+                {product.stock <= 5 && product.stock > 0 && (
+                  <View style={styles.scarcityContainer}>
+                    <View style={styles.scarcityDot} />
+                    <Text style={styles.scarcityText}>Only {product.stock} left</Text>
+                  </View>
                 )}
               </View>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -258,64 +314,97 @@ export default function ShopScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#fafafa",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#e8e8e8",
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700" as const,
-    letterSpacing: 2,
+    fontSize: 24,
+    fontWeight: "300" as const,
+    letterSpacing: 6,
     textTransform: "uppercase" as any,
+    color: "#1a1a1a",
   },
   promoBanner: {
-    backgroundColor: "#000",
-    paddingVertical: 24,
-    paddingHorizontal: 20,
+    overflow: "hidden",
+  },
+  promoBannerGradient: {
+    paddingVertical: 32,
+    paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
   },
   promoText: {
     color: "#fff",
     fontSize: 11,
-    fontWeight: "600" as const,
-    letterSpacing: 1,
+    fontWeight: "500" as const,
+    letterSpacing: 2,
     textTransform: "uppercase" as any,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 20,
+    opacity: 0.95,
   },
   promoButton: {
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "#fff",
     backgroundColor: "transparent",
-    paddingHorizontal: 32,
-    paddingVertical: 12,
+    paddingHorizontal: 40,
+    paddingVertical: 14,
+  },
+  promoButtonPressed: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   promoButtonText: {
     color: "#fff",
-    fontSize: 14,
-    fontWeight: "600" as const,
-    letterSpacing: 2,
+    fontSize: 13,
+    fontWeight: "500" as const,
+    letterSpacing: 3,
     textTransform: "uppercase" as any,
   },
   sectionTitleContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
+    backgroundColor: "#fff",
+    marginBottom: 1,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 32,
-    fontWeight: "700" as const,
-    color: "#000",
-    letterSpacing: 2,
+    fontSize: 28,
+    fontWeight: "300" as const,
+    color: "#1a1a1a",
+    letterSpacing: 4,
     textTransform: "uppercase" as any,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "#888",
+    letterSpacing: 1,
+    fontWeight: "400" as const,
+  },
+  productCount: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: "#f5f5f5",
+  },
+  productCountText: {
+    fontSize: 10,
+    color: "#666",
+    fontWeight: "500" as const,
+    letterSpacing: 1,
   },
   filterButton: {
     position: "relative",
@@ -359,19 +448,33 @@ const styles = StyleSheet.create({
     fontWeight: "bold" as const,
   },
   filtersContainer: {
-    padding: 20,
+    padding: 24,
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#e8e8e8",
+  },
+  filterHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  filterHeaderTitle: {
+    fontSize: 18,
+    fontWeight: "300" as const,
+    letterSpacing: 4,
+    color: "#1a1a1a",
   },
   filterSection: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   filterTitle: {
-    fontSize: 12,
-    fontWeight: "600" as const,
-    letterSpacing: 1,
-    marginBottom: 10,
-    color: "#666",
+    fontSize: 11,
+    fontWeight: "500" as const,
+    letterSpacing: 2,
+    marginBottom: 12,
+    color: "#888",
+    textTransform: "uppercase" as any,
   },
   filterOptions: {
     flexDirection: "row",
@@ -379,82 +482,132 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 20,
+    borderColor: "#d0d0d0",
+    backgroundColor: "#fff",
   },
   filterChipActive: {
-    backgroundColor: "#000",
-    borderColor: "#000",
+    backgroundColor: "#1a1a1a",
+    borderColor: "#1a1a1a",
   },
   filterChipText: {
     fontSize: 12,
-    color: "#666",
+    color: "#1a1a1a",
+    letterSpacing: 0.5,
   },
   filterChipTextActive: {
     color: "#fff",
   },
-  clearButton: {
-    alignSelf: "flex-start",
+  filterActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 8,
+    gap: 12,
+  },
+  clearButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: "#d0d0d0",
+    alignItems: "center",
   },
   clearButtonText: {
-    fontSize: 12,
-    fontWeight: "600" as const,
-    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: "500" as const,
+    letterSpacing: 2,
     color: "#666",
-    textDecorationLine: "underline",
+  },
+  applyButton: {
+    flex: 1,
+    paddingVertical: 14,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+  },
+  applyButtonText: {
+    fontSize: 11,
+    fontWeight: "500" as const,
+    letterSpacing: 2,
+    color: "#fff",
   },
   productsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    padding: 10,
+    padding: 12,
+    backgroundColor: "#fafafa",
     ...(Platform.OS === 'web' ? {
-      gap: 20,
+      gap: 16,
       maxWidth: 1200,
       alignSelf: 'center',
       width: '100%',
-      paddingHorizontal: 20,
+      paddingHorizontal: 24,
       justifyContent: 'flex-start',
     } : {
       gap: 0,
     }),
   },
   productCard: {
-    marginBottom: 30,
-    position: "relative",
+    marginBottom: 24,
+    backgroundColor: "#fff",
+    borderRadius: 2,
+    overflow: "hidden",
     ...(Platform.OS === 'web' ? {
       width: '48%' as const,
       minWidth: 280,
       maxWidth: 400,
       margin: 0,
     } : {
-      width: (width - 30) / 2,
-      margin: 5,
+      width: (width - 36) / 2,
+      margin: 6,
     }),
+  },
+  productCardPressed: {
+    opacity: 0.95,
+  },
+  imageContainer: {
+    position: "relative",
+    backgroundColor: "#fff",
   },
   newBadge: {
     position: "absolute",
-    top: 8,
-    left: 8,
-    backgroundColor: "#000",
+    top: 12,
+    left: 12,
+    backgroundColor: "#1a1a1a",
     paddingHorizontal: 10,
     paddingVertical: 6,
     zIndex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   newBadgeText: {
     color: "#fff",
-    fontSize: 10,
-    fontWeight: "700" as const,
-    letterSpacing: 1,
-    textTransform: "uppercase" as any,
+    fontSize: 9,
+    fontWeight: "600" as const,
+    letterSpacing: 1.5,
+  },
+  soldOutOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  soldOutOverlayText: {
+    fontSize: 16,
+    fontWeight: "500" as const,
+    letterSpacing: 3,
+    color: "#999",
   },
   productImage: {
     width: "100%",
     backgroundColor: "#fff",
-    marginBottom: 12,
     ...(Platform.OS === 'web' ? {
       aspectRatio: 3/4,
       objectFit: 'contain' as const,
@@ -465,28 +618,49 @@ const styles = StyleSheet.create({
     }),
   },
   productInfo: {
-    gap: 6,
+    padding: 16,
+    gap: 8,
   },
   productName: {
-    fontSize: 14,
-    fontWeight: "600" as const,
-    letterSpacing: 0.5,
-    color: "#000",
-    textTransform: "uppercase" as any,
+    fontSize: 13,
+    fontWeight: "400" as const,
+    letterSpacing: 1,
+    color: "#1a1a1a",
+    lineHeight: 18,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
   },
   productPrice: {
-    fontSize: 16,
-    fontWeight: "700" as const,
-    color: "#000",
+    fontSize: 18,
+    fontWeight: "300" as const,
+    color: "#1a1a1a",
+    letterSpacing: 0.5,
+  },
+  currencyText: {
+    fontSize: 11,
+    color: "#888",
+    letterSpacing: 0.5,
+  },
+  scarcityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  scarcityDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#d32f2f",
   },
   scarcityText: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#d32f2f",
-    fontStyle: "italic",
+    letterSpacing: 0.5,
   },
-  soldOutText: {
-    fontSize: 12,
-    color: "#999",
-    fontWeight: "600" as const,
+  bottomSpacer: {
+    height: 40,
   },
 });
