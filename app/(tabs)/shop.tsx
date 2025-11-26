@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Filter, X, ShoppingBag } from "lucide-react-native";
+import { Filter, ShoppingBag } from "lucide-react-native";
 import { products } from "@/data/products";
 import { useCart } from "@/providers/CartProvider";
 
@@ -106,12 +106,18 @@ export default function ShopScreen() {
       </View>
       
       {/* Promotional Banner */}
-      <View style={styles.promoBanner}>
+      <TouchableOpacity 
+        style={styles.promoBanner}
+        activeOpacity={0.95}
+        onPress={() => {
+          console.log('Sale banner clicked - showing all sale products');
+        }}
+      >
         <Text style={styles.promoText}>ED. SALE UP TO 70% OFF . MORE STYLES ADDED . SALE UP TO 70%</Text>
-        <TouchableOpacity style={styles.promoButton}>
+        <View style={styles.promoButton}>
           <Text style={styles.promoButtonText}>SHOP NOW</Text>
-        </TouchableOpacity>
-      </View>
+        </View>
+      </TouchableOpacity>
 
       {/* Filters */}
       {showFilters && (
