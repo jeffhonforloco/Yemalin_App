@@ -1,5 +1,4 @@
 import { emailStorage, AbandonedCart } from './emailStorage';
-import { useMarketing } from '@/providers/MarketingProvider';
 
 interface ReminderSchedule {
   hours: number;
@@ -42,7 +41,7 @@ export class ReminderSystem {
     // Check for carts needing reminders every 5 minutes
     this.checkInterval = setInterval(async () => {
       await this.processReminders();
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 5 * 60 * 1000) as any; // 5 minutes
 
     // Run immediately on start
     await this.processReminders();

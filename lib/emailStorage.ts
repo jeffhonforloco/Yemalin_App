@@ -51,7 +51,7 @@ class EmailStorageService {
       const updatedEmails = emails.filter(e => e.email.toLowerCase() !== email.toLowerCase());
       updatedEmails.push(emailRecord);
       
-      await AsyncStorage.setItem(this.EMAILS_KEY, JSON.stringify(updatedEmails));
+      await AsyncStorage.setItem(EmailStorageService.EMAILS_KEY, JSON.stringify(updatedEmails));
       
       console.log('📧 Email saved:', { email, source, totalEmails: updatedEmails.length });
       
@@ -64,7 +64,7 @@ class EmailStorageService {
 
   async getAllEmails(): Promise<EmailRecord[]> {
     try {
-      const data = await AsyncStorage.getItem(this.EMAILS_KEY);
+      const data = await AsyncStorage.getItem(EmailStorageService.EMAILS_KEY);
       return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error('Error getting emails:', error);
@@ -84,7 +84,7 @@ class EmailStorageService {
         ? { ...e, subscribed } 
         : e
     );
-    await AsyncStorage.setItem(this.EMAILS_KEY, JSON.stringify(updatedEmails));
+    await AsyncStorage.setItem(EmailStorageService.EMAILS_KEY, JSON.stringify(updatedEmails));
   }
 
   async getEmailCount(): Promise<number> {
@@ -120,7 +120,7 @@ class EmailStorageService {
       const updatedCarts = carts.filter(c => c.email.toLowerCase() !== email.toLowerCase());
       updatedCarts.push(abandonedCart);
       
-      await AsyncStorage.setItem(this.ABANDONED_CARTS_KEY, JSON.stringify(updatedCarts));
+      await AsyncStorage.setItem(EmailStorageService.ABANDONED_CARTS_KEY, JSON.stringify(updatedCarts));
       
       console.log('🛒 Abandoned cart saved:', { email, cartValue, items: cartItems.length });
       
@@ -133,7 +133,7 @@ class EmailStorageService {
 
   async getAllAbandonedCarts(): Promise<AbandonedCart[]> {
     try {
-      const data = await AsyncStorage.getItem(this.ABANDONED_CARTS_KEY);
+      const data = await AsyncStorage.getItem(EmailStorageService.ABANDONED_CARTS_KEY);
       return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error('Error getting abandoned carts:', error);
@@ -160,7 +160,7 @@ class EmailStorageService {
       }
       return cart;
     });
-    await AsyncStorage.setItem(this.ABANDONED_CARTS_KEY, JSON.stringify(updatedCarts));
+    await AsyncStorage.setItem(EmailStorageService.ABANDONED_CARTS_KEY, JSON.stringify(updatedCarts));
   }
 
   async markCartRecovered(email: string): Promise<void> {
@@ -175,7 +175,7 @@ class EmailStorageService {
       }
       return cart;
     });
-    await AsyncStorage.setItem(this.ABANDONED_CARTS_KEY, JSON.stringify(updatedCarts));
+    await AsyncStorage.setItem(EmailStorageService.ABANDONED_CARTS_KEY, JSON.stringify(updatedCarts));
   }
 
   async getAbandonedCartsNeedingReminder(): Promise<AbandonedCart[]> {
@@ -216,7 +216,7 @@ class EmailStorageService {
     try {
       const prefs = await this.getMarketingPreferences();
       prefs[email.toLowerCase()] = preferences;
-      await AsyncStorage.setItem(this.MARKETING_PREFERENCES_KEY, JSON.stringify(prefs));
+      await AsyncStorage.setItem(EmailStorageService.MARKETING_PREFERENCES_KEY, JSON.stringify(prefs));
     } catch (error) {
       console.error('Error saving marketing preferences:', error);
     }
@@ -224,7 +224,7 @@ class EmailStorageService {
 
   async getMarketingPreferences(): Promise<Record<string, { email: boolean; sms: boolean; push: boolean }>> {
     try {
-      const data = await AsyncStorage.getItem(this.MARKETING_PREFERENCES_KEY);
+      const data = await AsyncStorage.getItem(EmailStorageService.MARKETING_PREFERENCES_KEY);
       return data ? JSON.parse(data) : {};
     } catch (error) {
       console.error('Error getting marketing preferences:', error);
@@ -266,4 +266,3 @@ class EmailStorageService {
 }
 
 export const emailStorage = new EmailStorageService();
-

@@ -58,9 +58,7 @@ export default function EmailCollectionPopup({
 
     try {
       // Save email
-      await emailStorage.saveEmail(email.toLowerCase(), 'popup', {
-        source,
-      });
+      await emailStorage.saveEmail(email.toLowerCase(), 'popup');
 
       // Save for future use
       await AsyncStorage.setItem('@yemalin_last_email', email.toLowerCase());

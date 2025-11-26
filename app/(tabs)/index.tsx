@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { ArrowRight, Clock, Users, Star, Mail, Bell, Crown, Zap, Calendar, Lock } from "lucide-react-native";
+import { ArrowRight, Clock, Users, Star, Mail, Crown, Zap, Calendar, Lock } from "lucide-react-native";
 import { products, comingSoonProducts } from "@/data/products";
 import { useMarketing } from "@/providers/MarketingProvider";
 
@@ -67,6 +67,7 @@ export default function HomeScreen() {
     }
     
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   // Handle scarcity alerts only once on mount
@@ -79,6 +80,7 @@ export default function HomeScreen() {
       });
       hasTriggeredAlerts.current = true;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once on mount
   
   const formatTime = (seconds: number) => {
@@ -105,7 +107,7 @@ export default function HomeScreen() {
       
       // Track conversion
       marketing.trackConversion('homepage_waitlist_signup', { email, source: 'homepage' });
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to join waitlist. Please try again.');
     }
   };
@@ -922,7 +924,7 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#ccc",
   },
-  logoSubtext: {
+  logoSubtext2: {
     fontSize: 10,
     color: "#999",
     letterSpacing: 2,

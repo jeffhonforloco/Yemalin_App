@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { emailStorage } from "@/lib/emailStorage";
@@ -62,7 +62,7 @@ export const [CartProvider, useCart] = createContextHook<CartContextType>(() => 
             await trackAbandonedCart(emailToUse);
           }
         }
-      }, 30 * 60 * 1000); // 30 minutes
+      }, 30 * 60 * 1000) as any; // 30 minutes
 
       return () => {
         if (abandonCartTimeoutRef.current) {
@@ -70,6 +70,7 @@ export const [CartProvider, useCart] = createContextHook<CartContextType>(() => 
         }
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
   const loadCart = async () => {
@@ -174,7 +175,8 @@ export const [CartProvider, useCart] = createContextHook<CartContextType>(() => 
         emailToUse = userData ? JSON.parse(userData)?.email : null;
       }
       if (!emailToUse) {
-        emailToUse = await AsyncStorage.getItem('@yemalin_last_email');
+        const lastEmail = await AsyncStorage.getItem('@yemalin_last_email');
+        emailToUse = lastEmail ?? undefined;
       }
       if (!emailToUse) return;
 
