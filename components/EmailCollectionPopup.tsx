@@ -63,9 +63,6 @@ export default function EmailCollectionPopup({
       // Save for future use
       await AsyncStorage.setItem('@yemalin_last_email', email.toLowerCase());
 
-      // Track conversion
-      console.log('📧 Email collected via popup:', { email, source, offer });
-
       // Close popup after successful submission
       setTimeout(() => {
         setLoading(false);

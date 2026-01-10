@@ -79,7 +79,6 @@ export default function ShopScreen() {
     (filters.availability !== "all" ? 1 : 0);
 
   const handleSaleBannerPress = () => {
-    console.log('Shop Now pressed - navigating to sale items');
     setFilters({
       color: [],
       size: [],

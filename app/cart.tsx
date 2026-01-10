@@ -24,7 +24,6 @@ export default function CartScreen() {
   const total = subtotal + shipping + tax;
 
   const handleCheckout = () => {
-    console.log("Checkout pressed", { isAuthenticated, isLoading, itemCount });
     if (isLoading) {
       return;
     }
