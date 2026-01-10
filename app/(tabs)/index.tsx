@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "cover",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#1a1a1a",
   },
   heroOverlay: {
     position: "absolute",
@@ -530,6 +530,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 14,
     alignSelf: "flex-start",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   shopNowText: {
     color: "#fff",
@@ -567,6 +572,14 @@ const styles = StyleSheet.create({
     width: Platform.OS === 'web' ? '48%' as const : (width - 50) / 2,
     marginBottom: 30,
     position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+    backgroundColor: "#fff",
+    borderRadius: 2,
+    overflow: "hidden",
     ...(Platform.OS === 'web' && {
       minWidth: 280,
       maxWidth: 400,
@@ -591,15 +604,15 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f8f8",
     marginBottom: 12,
     ...(Platform.OS === 'web' ? {
       aspectRatio: 3/4,
-      resizeMode: 'contain' as const,
-      objectFit: 'contain' as const,
+      resizeMode: 'cover' as const,
+      objectFit: 'cover' as const,
     } : {
       height: 280,
-      resizeMode: 'contain' as const,
+      resizeMode: 'cover' as const,
     }),
   },
   productInfo: {
@@ -653,8 +666,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     ...(Platform.OS === 'web' ? {
       aspectRatio: 3/4,
-      resizeMode: 'contain' as const,
-      objectFit: 'contain' as const,
+      resizeMode: 'cover' as const,
+      objectFit: 'cover' as const,
     } : {
       height: 150,
       resizeMode: 'cover' as const,
@@ -828,8 +841,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     ...(Platform.OS === 'web' ? {
       aspectRatio: 9/11,
-      resizeMode: 'contain' as const,
-      objectFit: 'contain' as const,
+      resizeMode: 'cover' as const,
+      objectFit: 'cover' as const,
     } : {
       height: 220,
       resizeMode: 'cover' as const,

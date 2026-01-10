@@ -101,33 +101,41 @@ export default function CartScreen() {
                     )}
                     <Text style={styles.itemSize}>Size: {item.size}</Text>
                   </View>
-                  <View style={styles.removeGroup}>
-                    <TouchableOpacity
-                      onPress={() => removeFromCart(item.id, item.size)}
-                      style={styles.removeButton}
-                      testID={`remove-item-${item.id}-${item.size}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove ${item.name} size ${item.size} from cart`}
-                    >
-                      <Trash2 size={18} color="#999" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => removeFromCart(item.id, item.size)}
-                      style={styles.removeTextButton}
-                      testID={`remove-text-${item.id}-${item.size}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove ${item.name} size ${item.size} from cart`}
-                    >
-                      <Text style={styles.removeText}>Remove</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      if (Platform.OS === 'web') {
+                        const shouldDelete = typeof globalThis.confirm === 'function'
+                          ? globalThis.confirm(`Remove ${item.name} (size ${item.size}) from your bag?`)
+                          : true;
+                        if (shouldDelete) {
+                          await removeFromCart(item.id, item.size);
+                        }
+                      } else {
+                        Alert.alert(
+                          'Remove Item',
+                          `Remove ${item.name} (size ${item.size}) from your bag?`,
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Remove', onPress: () => removeFromCart(item.id, item.size), style: 'destructive' },
+                          ]
+                        );
+                      }
+                    }}
+                    style={styles.removeButton}
+                    testID={`remove-item-${item.id}-${item.size}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${item.name} size ${item.size} from cart`}
+                  >
+                    <Trash2 size={20} color="#999" />
+                  </TouchableOpacity>
                 </View>
-                
+
                 <View style={styles.itemFooter}>
                   <View style={styles.quantityContainer}>
                     <TouchableOpacity
                       style={styles.quantityButton}
                       onPress={() => handleQuantityChange(item.id, item.size, item.quantity, -1)}
+                      activeOpacity={0.7}
                     >
                       <Minus size={16} color="#000" />
                     </TouchableOpacity>
@@ -135,43 +143,14 @@ export default function CartScreen() {
                     <TouchableOpacity
                       style={styles.quantityButton}
                       onPress={() => handleQuantityChange(item.id, item.size, item.quantity, 1)}
+                      activeOpacity={0.7}
                     >
                       <Plus size={16} color="#000" />
                     </TouchableOpacity>
                   </View>
-                  <View style={styles.actionsRight}>
-                    <Text style={styles.itemPrice}>
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={async () => {
-                        if (Platform.OS === 'web') {
-                          const shouldDelete = typeof globalThis.confirm === 'function'
-                            ? globalThis.confirm(`Delete ${item.name} (size ${item.size}) from your bag?`)
-                            : true;
-                          if (shouldDelete) {
-                            await removeFromCart(item.id, item.size);
-                          }
-                        } else {
-                          Alert.alert(
-                            'Remove Item',
-                            `Delete ${item.name} (size ${item.size}) from your bag?`,
-                            [
-                              { text: 'Cancel', style: 'cancel' },
-                              { text: 'Delete', onPress: () => removeFromCart(item.id, item.size), style: 'destructive' },
-                            ]
-                          );
-                        }
-                      }}
-                      style={styles.deleteButton}
-                      testID={`delete-item-${item.id}-${item.size}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Delete ${item.name} size ${item.size} from cart`}
-                    >
-                      <Trash2 size={16} color="#B00020" />
-                      <Text style={styles.deleteButtonText}>Delete</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Text style={styles.itemPrice}>
+                    ${(item.price * item.quantity).toFixed(2)}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -290,12 +269,15 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+    backgroundColor: "#fff",
   },
   itemImage: {
     width: 100,
     height: 120,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f8f8",
     marginRight: 16,
+    resizeMode: "cover",
+    borderRadius: 4,
   },
   itemDetails: {
     flex: 1,
@@ -324,50 +306,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-  removeGroup: {
-    alignItems: "flex-end",
-  },
   removeButton: {
-    padding: 4,
-    alignSelf: "flex-end",
-  },
-  removeTextButton: {
-    paddingVertical: 2,
-  },
-  removeText: {
-    fontSize: 12,
-    color: "#888",
-    textDecorationLine: "underline",
+    padding: 8,
+    alignSelf: "flex-start",
   },
   itemFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    marginTop: 12,
   },
   quantityContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#e0e0e0",
+    borderRadius: 4,
+    backgroundColor: "#fafafa",
   },
   quantityButton: {
-    padding: 8,
+    padding: 10,
+    minWidth: 36,
+    alignItems: "center",
+    justifyContent: "center",
   },
   quantity: {
     paddingHorizontal: 16,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500" as const,
-  },
-  actionsRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    minWidth: 30,
+    textAlign: "center",
   },
   itemPrice: {
-    fontSize: 16,
-    fontWeight: "500" as const,
-    marginRight: 8,
+    fontSize: 17,
+    fontWeight: "600" as const,
+    color: "#000",
+    letterSpacing: 0.3,
   },
   summary: {
     padding: 20,
@@ -422,18 +396,25 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
+    backgroundColor: "#fff",
   },
   checkoutButton: {
     backgroundColor: "#000",
-    paddingVertical: 16,
+    paddingVertical: 18,
     alignItems: "center",
     marginBottom: 12,
+    borderRadius: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   checkoutButtonText: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "600" as const,
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   continueButton: {
     alignItems: "center",
@@ -443,21 +424,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     textDecorationLine: "underline",
-  },
-  deleteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: "#F2B8B5",
-    backgroundColor: "#FFF5F5",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  deleteButtonText: {
-    color: "#B00020",
-    fontSize: 12,
-    fontWeight: "600" as const,
-    letterSpacing: 0.5,
   },
 });
