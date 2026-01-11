@@ -8,13 +8,17 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  Animated,
+  Modal,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Heart, Ruler, ShoppingBag, Truck } from "lucide-react-native";
+import { ArrowLeft, Heart, Ruler, ShoppingBag, Truck, ZoomIn, X } from "lucide-react-native";
 import { products } from "@/data/products";
 import { useCart } from "@/providers/CartProvider";
 import * as Haptics from "expo-haptics";
+import LuxuryNotification from "@/components/LuxuryNotification";
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,6 +29,14 @@ export default function ProductDetailScreen() {
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    visible: boolean;
+    type: "success" | "error" | "warning" | "info";
+    title: string;
+    message?: string;
+  }>({ visible: false, type: "success", title: "" });
+  const scaleAnim = useState(new Animated.Value(1))[0];
 
   if (!product) {
     return (
@@ -36,14 +48,33 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (!selectedSize) {
-      alert("Please select a size");
+      setNotification({
+        visible: true,
+        type: "warning",
+        title: "Select a Size",
+        message: "Please select a size before adding to cart",
+      });
       return;
     }
-    
+
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    
+
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     addToCart({
       id: product.id,
       name: product.name,
@@ -53,8 +84,17 @@ export default function ProductDetailScreen() {
       quantity: 1,
       description: product.description,
     });
-    
-    router.push("/shop");
+
+    setNotification({
+      visible: true,
+      type: "success",
+      title: "Added to Cart",
+      message: `${product.name} (${selectedSize}) has been added to your bag`,
+    });
+
+    setTimeout(() => {
+      router.push("/cart");
+    }, 1500);
   };
 
   const toggleFavorite = () => {
@@ -66,58 +106,80 @@ export default function ProductDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
+      <LuxuryNotification
+        visible={notification.visible}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onDismiss={() => setNotification({ ...notification, visible: false })}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Custom Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
           >
             <ArrowLeft size={24} color="#000" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.favoriteButton}
-            onPress={toggleFavorite}
-          >
-            <Heart 
-              size={24} 
-              color={isFavorite ? "#d32f2f" : "#000"} 
-              fill={isFavorite ? "#d32f2f" : "none"}
-            />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.zoomButton}
+              onPress={() => setShowImageModal(true)}
+            >
+              <ZoomIn size={20} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.favoriteButton}
+              onPress={toggleFavorite}
+            >
+              <Heart
+                size={24}
+                color={isFavorite ? "#d32f2f" : "#000"}
+                fill={isFavorite ? "#d32f2f" : "none"}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Product Images */}
-        <View style={styles.imageContainer}>
-          <ScrollView 
-            horizontal 
-            pagingEnabled 
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(e) => {
-              const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
-              setImageIndex(newIndex);
-            }}
-          >
-            {product.images.map((image, index) => (
-              <Image 
-                key={index}
-                source={{ uri: image }} 
-                style={styles.productImage} 
-              />
-            ))}
-          </ScrollView>
-          <View style={styles.imageDots}>
-            {product.images.map((_, index) => (
-              <View 
-                key={index}
-                style={[
-                  styles.dot,
-                  index === imageIndex && styles.activeDot
-                ]}
-              />
-            ))}
+        <Pressable onPress={() => setShowImageModal(true)}>
+          <View style={styles.imageContainer}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+                setImageIndex(newIndex);
+              }}
+            >
+              {product.images.map((image, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: image }}
+                  style={styles.productImage}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.imageDots}>
+              {product.images.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.dot,
+                    index === imageIndex && styles.activeDot
+                  ]}
+                />
+              ))}
+            </View>
+            <View style={styles.zoomHint}>
+              <ZoomIn size={16} color="#666" />
+              <Text style={styles.zoomHintText}>Tap to zoom</Text>
+            </View>
           </View>
-        </View>
+        </Pressable>
 
         {/* Product Info */}
         <View style={styles.productInfo}>
@@ -188,20 +250,57 @@ export default function ProductDetailScreen() {
 
       {/* Add to Cart Button */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity 
-          style={[
-            styles.addToCartButton,
-            !selectedSize && styles.addToCartButtonDisabled
-          ]}
-          onPress={handleAddToCart}
-          disabled={!selectedSize || product.stock === 0}
-        >
-          <ShoppingBag size={20} color="#fff" />
-          <Text style={styles.addToCartText}>
-            {product.stock === 0 ? "OUT OF STOCK" : "ADD TO CART"}
-          </Text>
-        </TouchableOpacity>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
+          <TouchableOpacity
+            style={[
+              styles.addToCartButton,
+              !selectedSize && styles.addToCartButtonDisabled
+            ]}
+            onPress={handleAddToCart}
+            disabled={!selectedSize || product.stock === 0}
+            activeOpacity={0.9}
+          >
+            <ShoppingBag size={20} color="#fff" />
+            <Text style={styles.addToCartText}>
+              {product.stock === 0 ? "OUT OF STOCK" : "ADD TO CART"}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
+
+      {/* Image Zoom Modal */}
+      <Modal
+        visible={showImageModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowImageModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.modalClose}
+            onPress={() => setShowImageModal(false)}
+          >
+            <View style={styles.closeButton}>
+              <X size={24} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentOffset={{ x: imageIndex * width, y: 0 }}
+          >
+            {product.images.map((image, index) => (
+              <Image
+                key={index}
+                source={{ uri: image }}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -221,21 +320,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 10,
   },
+  headerActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.95)",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  zoomButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   favoriteButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.95)",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   imageContainer: {
     position: "relative",
@@ -381,5 +507,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600" as const,
     letterSpacing: 1,
+  },
+  zoomHint: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+  },
+  zoomHintText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "500" as const,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalClose: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    zIndex: 10,
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalImage: {
+    width: width,
+    height: height,
   },
 });

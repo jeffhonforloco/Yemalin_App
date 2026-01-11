@@ -79,7 +79,6 @@ export default function ShopScreen() {
     (filters.availability !== "all" ? 1 : 0);
 
   const handleSaleBannerPress = () => {
-    console.log('Shop Now pressed - navigating to sale items');
     setFilters({
       color: [],
       size: [],
@@ -553,6 +552,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 2,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
     ...(Platform.OS === 'web' ? {
       width: '48%' as const,
       minWidth: 280,
@@ -607,14 +611,14 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f8f8",
     ...(Platform.OS === 'web' ? {
       aspectRatio: 3/4,
-      objectFit: 'contain' as const,
-      resizeMode: 'contain' as const,
+      objectFit: 'cover' as const,
+      resizeMode: 'cover' as const,
     } : {
       height: 280,
-      resizeMode: 'contain' as const,
+      resizeMode: 'cover' as const,
     }),
   },
   productInfo: {

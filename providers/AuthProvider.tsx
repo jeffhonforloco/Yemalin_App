@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
+import { trpc } from "@/lib/trpc";
+
+// Enable/disable backend integration
+// Set to true once backend is deployed and configured
+const USE_BACKEND_API = false;
 
 interface User {
   id: string;
@@ -12,6 +17,8 @@ interface User {
   addresses?: Address[];
   phoneNumber?: string;
   profileImage?: string;
+  isVip?: boolean;
+  vipTier?: string;
 }
 
 interface Address {
@@ -91,98 +98,188 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextType>(() => 
   };
 
   const login = async (email: string, password: string, name?: string) => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if user already exists (for login)
-    const existingUserData = await AsyncStorage.getItem("@yemalin_users");
-    const users = existingUserData ? JSON.parse(existingUserData) : {};
-    
-    let mockUser: User;
-    
-    if (name) {
-      // Sign up - create new user
-      mockUser = {
-        id: Date.now().toString(),
-        name: name,
-        email,
-        totalSpent: 0, // New users start with 0 spent
-        memberSince: new Date().toISOString(),
-        addresses: [],
-        phoneNumber: "",
-      };
-      
-      // Save user to users database
-      users[email] = { ...mockUser, password }; // In production, password would be hashed
-      await AsyncStorage.setItem("@yemalin_users", JSON.stringify(users));
-    } else {
-      // Sign in - check existing user
-      if (email === "guest@yemalin.com") {
-        mockUser = {
-          id: "guest",
-          name: "Guest User",
-          email,
-          totalSpent: 0,
-          memberSince: new Date().toISOString(),
-          addresses: [],
-        };
-      } else if (users[email]) {
-        // User exists, use their data
-        mockUser = users[email];
-        delete (mockUser as any).password; // Remove password from user object
-        // Ensure totalSpent is a number
-        if (mockUser.totalSpent === undefined || mockUser.totalSpent === null) {
-          mockUser.totalSpent = 0;
+    if (USE_BACKEND_API) {
+      // Use real backend API
+      try {
+        if (name) {
+          // Sign up
+          const response = await fetch(`${process.env.EXPO_PUBLIC_RORK_API_BASE_URL}/api/trpc/auth.signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              password,
+              name,
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Signup failed');
+          }
+
+          const data = await response.json();
+          const { user: apiUser, tokens } = data.result.data;
+
+          // Store JWT token
+          await AsyncStorage.setItem("@yemalin_auth_token", tokens.accessToken);
+          await AsyncStorage.setItem("@yemalin_refresh_token", tokens.refreshToken);
+
+          const user: User = {
+            id: apiUser.id,
+            name: apiUser.name || '',
+            email: apiUser.email,
+            totalSpent: apiUser.totalSpent || 0,
+            memberSince: new Date().toISOString(),
+            isVip: apiUser.isVip,
+            vipTier: apiUser.vipTier,
+          };
+
+          setUser(user);
+          await saveUser(user);
+        } else {
+          // Login
+          const response = await fetch(`${process.env.EXPO_PUBLIC_RORK_API_BASE_URL}/api/trpc/auth.login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              password,
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Login failed');
+          }
+
+          const data = await response.json();
+          const { user: apiUser, tokens } = data.result.data;
+
+          // Store JWT token
+          await AsyncStorage.setItem("@yemalin_auth_token", tokens.accessToken);
+          await AsyncStorage.setItem("@yemalin_refresh_token", tokens.refreshToken);
+
+          const user: User = {
+            id: apiUser.id,
+            name: apiUser.name || '',
+            email: apiUser.email,
+            totalSpent: apiUser.totalSpent || 0,
+            memberSince: new Date().toISOString(),
+            isVip: apiUser.isVip,
+            vipTier: apiUser.vipTier,
+            profileImage: apiUser.profileImage,
+          };
+
+          setUser(user);
+          await saveUser(user);
         }
-      } else {
-        // For demo purposes, create a default user if not found
+      } catch (error) {
+        console.error('Authentication error:', error);
+        throw error;
+      }
+    } else {
+      // Use mock data (current implementation)
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Check if user already exists (for login)
+      const existingUserData = await AsyncStorage.getItem("@yemalin_users");
+      const users = existingUserData ? JSON.parse(existingUserData) : {};
+
+      let mockUser: User;
+
+      if (name) {
+        // Sign up - create new user
         mockUser = {
           id: Date.now().toString(),
-          name: email.split('@')[0].replace(/[._]/g, ' ').split(' ').map((word: string) => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-          ).join(' '),
+          name: name,
           email,
           totalSpent: 0, // New users start with 0 spent
           memberSince: new Date().toISOString(),
           addresses: [],
+          phoneNumber: "",
         };
-        
-        // Save this user for future logins
-        users[email] = { ...mockUser, password };
+
+        // Save user to users database
+        users[email] = { ...mockUser, password }; // In production, password would be hashed
         await AsyncStorage.setItem("@yemalin_users", JSON.stringify(users));
+      } else {
+        // Sign in - check existing user
+        if (email === "guest@yemalin.com") {
+          mockUser = {
+            id: "guest",
+            name: "Guest User",
+            email,
+            totalSpent: 0,
+            memberSince: new Date().toISOString(),
+            addresses: [],
+          };
+        } else if (users[email]) {
+          // User exists, use their data
+          mockUser = users[email];
+          delete (mockUser as any).password; // Remove password from user object
+          // Ensure totalSpent is a number
+          if (mockUser.totalSpent === undefined || mockUser.totalSpent === null) {
+            mockUser.totalSpent = 0;
+          }
+        } else {
+          // For demo purposes, create a default user if not found
+          mockUser = {
+            id: Date.now().toString(),
+            name: email.split('@')[0].replace(/[._]/g, ' ').split(' ').map((word: string) =>
+              word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' '),
+            email,
+            totalSpent: 0, // New users start with 0 spent
+            memberSince: new Date().toISOString(),
+            addresses: [],
+          };
+
+          // Save this user for future logins
+          users[email] = { ...mockUser, password };
+          await AsyncStorage.setItem("@yemalin_users", JSON.stringify(users));
+        }
       }
+
+      setUser(mockUser);
+      await saveUser(mockUser);
     }
-    
-    setUser(mockUser);
-    await saveUser(mockUser);
   };
 
   const logout = async () => {
     try {
       console.log("Logging out user...");
-      
+
       // Clear user state first
       setUser(null);
-      
+
       // Clear AsyncStorage
-      await Promise.all([
-        AsyncStorage.removeItem("@yemalin_user"),
-        AsyncStorage.removeItem("@yemalin_cart")
-      ]);
-      
+      const itemsToRemove = [
+        "@yemalin_user",
+        "@yemalin_cart"
+      ];
+
+      // If using backend API, also clear tokens
+      if (USE_BACKEND_API) {
+        itemsToRemove.push("@yemalin_auth_token");
+        itemsToRemove.push("@yemalin_refresh_token");
+      }
+
+      await Promise.all(itemsToRemove.map(item => AsyncStorage.removeItem(item)));
+
       // For web, also clear localStorage as fallback
       if (Platform.OS === 'web') {
         try {
           if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem('@yemalin_user');
-            localStorage.removeItem('@yemalin_cart');
+            itemsToRemove.forEach(item => localStorage.removeItem(item));
             // Don't clear users database as it contains all registered users
           }
         } catch (webError) {
           console.log('Web localStorage clear failed:', webError);
         }
       }
-      
+
       console.log("Logout completed successfully");
     } catch (error) {
       console.error("Error during logout:", error);

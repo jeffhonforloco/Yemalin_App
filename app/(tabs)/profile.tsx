@@ -45,14 +45,7 @@ export default function ProfileScreen() {
   const isWeb = Platform.OS === 'web';
   const isLargeScreen = screenData.width >= 768;
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log("Profile Screen Debug:");
-    console.log("User:", user);
-    console.log("Total Spent:", user?.totalSpent);
-    console.log("Is VIP:", isVIP);
-    console.log("VIP Calculation:", user ? (user.totalSpent >= 500) : false);
-  }, [user, isVIP]);
+  // VIP status is calculated in AuthProvider based on totalSpent >= 500
 
   // Redirect to login if not authenticated after loading
   React.useEffect(() => {
@@ -304,10 +297,8 @@ export default function ProfileScreen() {
           onPress={() => {
             const handleLogout = async () => {
               try {
-                console.log('Starting logout process...');
                 await logout();
-                console.log('Logout completed, redirecting...');
-                
+
                 // Use router.push instead of replace to ensure proper navigation
                 if (Platform.OS === 'web') {
                   // On web, we might need to force a page refresh to clear all state

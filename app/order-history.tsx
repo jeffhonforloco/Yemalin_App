@@ -136,7 +136,7 @@ export default function OrderHistoryScreen() {
                 style={styles.orderCard}
                 onPress={() => {
                   // In a real app, this would navigate to order details
-                  console.log("View order details:", order.id);
+                  // Navigate to order details view
                 }}
               >
                 {/* Order Header */}
