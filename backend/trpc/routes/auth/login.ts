@@ -34,7 +34,7 @@ export default publicProcedure
     await updateLastLogin(user.id);
 
     // Generate JWT tokens
-    const tokens = generateTokenPair({
+    const tokens = await generateTokenPair({
       userId: user.id,
       email: user.email,
       isVip: user.is_vip,

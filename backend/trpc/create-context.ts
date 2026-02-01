@@ -1,13 +1,10 @@
 import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
-import { pool } from "../db/connection";
 import { verifyAccessToken, extractTokenFromHeader, JWTPayload } from "../auth/jwt";
 import { findUserById, User } from "../db/models/users";
 
-// Context creation function
 export const createContext = async (opts: FetchCreateContextFnOptions) => {
-  // Extract and verify JWT token
   const authHeader = opts.req.headers.get('Authorization');
   const token = extractTokenFromHeader(authHeader);
 
@@ -15,16 +12,14 @@ export const createContext = async (opts: FetchCreateContextFnOptions) => {
   let jwtPayload: JWTPayload | null = null;
 
   if (token) {
-    jwtPayload = verifyAccessToken(token);
+    jwtPayload = await verifyAccessToken(token);
     if (jwtPayload) {
-      // Fetch fresh user data from database
       user = await findUserById(jwtPayload.userId);
     }
   }
 
   return {
     req: opts.req,
-    db: pool,
     user,
     jwtPayload,
   };
@@ -32,12 +27,10 @@ export const createContext = async (opts: FetchCreateContextFnOptions) => {
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
 
-// Initialize tRPC
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
 });
 
-// Middleware to check authentication
 const isAuthenticated = t.middleware(({ ctx, next }) => {
   if (!ctx.user || !ctx.jwtPayload) {
     throw new TRPCError({
@@ -49,13 +42,12 @@ const isAuthenticated = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
-      user: ctx.user, // Now TypeScript knows user is not null
+      user: ctx.user,
       jwtPayload: ctx.jwtPayload,
     },
   });
 });
 
-// Middleware to check if user is VIP
 const isVIP = t.middleware(({ ctx, next }) => {
   if (!ctx.user || !ctx.jwtPayload) {
     throw new TRPCError({
@@ -80,7 +72,6 @@ const isVIP = t.middleware(({ ctx, next }) => {
   });
 });
 
-// Middleware to check if user is admin
 const isAdmin = t.middleware(({ ctx, next }) => {
   if (!ctx.user || !ctx.jwtPayload) {
     throw new TRPCError({
@@ -89,7 +80,6 @@ const isAdmin = t.middleware(({ ctx, next }) => {
     });
   }
 
-  // Check if user email is admin (you can expand this with a proper admin role system)
   if (!ctx.user.email.includes('admin@yemalin.com')) {
     throw new TRPCError({
       code: 'FORBIDDEN',

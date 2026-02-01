@@ -40,7 +40,6 @@ export interface ProductImage {
   created_at: Date;
 }
 
-// Get all active products
 export async function getActiveProducts(): Promise<ProductWithImages[]> {
   const products = await query<Product>(
     `SELECT * FROM products
@@ -51,7 +50,6 @@ export async function getActiveProducts(): Promise<ProductWithImages[]> {
   return await enrichProductsWithDetails(products);
 }
 
-// Get coming soon products
 export async function getComingSoonProducts(): Promise<ProductWithImages[]> {
   const products = await query<Product>(
     `SELECT * FROM products
@@ -62,7 +60,6 @@ export async function getComingSoonProducts(): Promise<ProductWithImages[]> {
   return await enrichProductsWithDetails(products);
 }
 
-// Get product by ID
 export async function getProductById(id: string): Promise<ProductWithImages | null> {
   const product = await queryOne<Product>(
     'SELECT * FROM products WHERE id = $1',
@@ -75,7 +72,6 @@ export async function getProductById(id: string): Promise<ProductWithImages | nu
   return enriched[0] || null;
 }
 
-// Helper to enrich products with images and sizes
 async function enrichProductsWithDetails(
   products: Product[]
 ): Promise<ProductWithImages[]> {
@@ -83,7 +79,6 @@ async function enrichProductsWithDetails(
 
   const productIds = products.map(p => p.id);
 
-  // Get all images for these products
   const images = await query<ProductImage>(
     `SELECT * FROM product_images
      WHERE product_id = ANY($1)
@@ -91,7 +86,6 @@ async function enrichProductsWithDetails(
     [productIds]
   );
 
-  // Get all sizes for these products
   const sizes = await query<ProductSize>(
     `SELECT * FROM product_sizes
      WHERE product_id = ANY($1)
@@ -108,7 +102,6 @@ async function enrichProductsWithDetails(
     [productIds]
   );
 
-  // Group by product
   const imagesByProduct = images.reduce((acc, img) => {
     if (!acc[img.product_id]) acc[img.product_id] = [];
     acc[img.product_id].push(img.image_url);
@@ -128,7 +121,6 @@ async function enrichProductsWithDetails(
   }));
 }
 
-// Check product availability
 export async function checkProductAvailability(
   productId: string,
   size: string,
@@ -143,14 +135,12 @@ export async function checkProductAvailability(
   return result ? result.stock >= quantity : false;
 }
 
-// Update product stock (when order is placed)
 export async function decrementProductStock(
   productId: string,
   size: string,
   quantity: number
 ): Promise<void> {
   await transaction(async (client) => {
-    // Update size-specific stock
     await client.query(
       `UPDATE product_sizes
        SET stock = stock - $1
@@ -158,7 +148,6 @@ export async function decrementProductStock(
       [quantity, productId, size]
     );
 
-    // Update total product stock
     await client.query(
       `UPDATE products
        SET stock = stock - $1
@@ -168,7 +157,6 @@ export async function decrementProductStock(
   });
 }
 
-// Restore product stock (when order is cancelled)
 export async function incrementProductStock(
   productId: string,
   size: string,
@@ -191,7 +179,6 @@ export async function incrementProductStock(
   });
 }
 
-// Admin: Create product
 export async function createProduct(input: {
   name: string;
   description: string;
@@ -208,7 +195,6 @@ export async function createProduct(input: {
   sizes: { size: string; stock: number }[];
 }): Promise<ProductWithImages> {
   return await transaction(async (client) => {
-    // Insert product
     const productResult = await client.query(
       `INSERT INTO products
        (name, description, price, color, stock, is_limited, total_made,
@@ -230,9 +216,8 @@ export async function createProduct(input: {
       ]
     );
 
-    const product = productResult.rows[0];
+    const product = productResult.rows[0] as Product;
 
-    // Insert images
     for (let i = 0; i < input.images.length; i++) {
       await client.query(
         `INSERT INTO product_images
@@ -242,8 +227,7 @@ export async function createProduct(input: {
       );
     }
 
-    // Insert sizes
-    const sizeResults = [];
+    const sizeResults: ProductSize[] = [];
     for (const sizeData of input.sizes) {
       const result = await client.query(
         `INSERT INTO product_sizes (product_id, size, stock)
@@ -251,7 +235,7 @@ export async function createProduct(input: {
          RETURNING *`,
         [product.id, sizeData.size, sizeData.stock]
       );
-      sizeResults.push(result.rows[0]);
+      sizeResults.push(result.rows[0] as ProductSize);
     }
 
     return {
@@ -262,7 +246,6 @@ export async function createProduct(input: {
   });
 }
 
-// Admin: Update product
 export async function updateProduct(
   productId: string,
   input: Partial<{
@@ -302,7 +285,6 @@ export async function updateProduct(
   );
 }
 
-// Get product inventory stats
 export async function getInventoryStats() {
   const stats = await query<{
     total_products: number;

@@ -32,7 +32,7 @@ export default publicProcedure
     });
 
     // Generate JWT tokens
-    const tokens = generateTokenPair({
+    const tokens = await generateTokenPair({
       userId: user.id,
       email: user.email,
       isVip: user.is_vip,

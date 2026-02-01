@@ -1,6 +1,5 @@
 import { query, queryOne, transaction } from '../connection';
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface User {
   id: string;
@@ -34,13 +33,11 @@ export interface UpdateUserInput {
   profile_image?: string;
 }
 
-// Create a new user
 export async function createUser(input: CreateUserInput): Promise<User> {
   const { email, password, name, phone } = input;
 
-  // Hash password
   const password_hash = await bcrypt.hash(password, 10);
-  const verification_token = uuidv4();
+  const verification_token = crypto.randomUUID();
 
   const user = await queryOne<User>(
     `INSERT INTO users (email, password_hash, name, phone, verification_token)
@@ -56,7 +53,6 @@ export async function createUser(input: CreateUserInput): Promise<User> {
   return user;
 }
 
-// Find user by email
 export async function findUserByEmail(email: string): Promise<User | null> {
   return await queryOne<User>(
     'SELECT * FROM users WHERE email = $1',
@@ -64,7 +60,6 @@ export async function findUserByEmail(email: string): Promise<User | null> {
   );
 }
 
-// Find user by ID
 export async function findUserById(id: string): Promise<User | null> {
   return await queryOne<User>(
     'SELECT * FROM users WHERE id = $1',
@@ -72,7 +67,6 @@ export async function findUserById(id: string): Promise<User | null> {
   );
 }
 
-// Verify user password
 export async function verifyPassword(
   user: User,
   password: string
@@ -80,7 +74,6 @@ export async function verifyPassword(
   return await bcrypt.compare(password, user.password_hash);
 }
 
-// Update user
 export async function updateUser(
   userId: string,
   input: UpdateUserInput
@@ -117,7 +110,6 @@ export async function updateUser(
   return user;
 }
 
-// Update last login
 export async function updateLastLogin(userId: string): Promise<void> {
   await query(
     'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
@@ -125,7 +117,6 @@ export async function updateLastLogin(userId: string): Promise<void> {
   );
 }
 
-// Verify email
 export async function verifyEmail(token: string): Promise<User | null> {
   const user = await queryOne<User>(
     `UPDATE users
@@ -138,10 +129,9 @@ export async function verifyEmail(token: string): Promise<User | null> {
   return user;
 }
 
-// Generate password reset token
 export async function generateResetToken(email: string): Promise<string | null> {
-  const reset_token = uuidv4();
-  const reset_token_expires = new Date(Date.now() + 3600000); // 1 hour
+  const reset_token = crypto.randomUUID();
+  const reset_token_expires = new Date(Date.now() + 3600000);
 
   const user = await queryOne<User>(
     `UPDATE users
@@ -154,7 +144,6 @@ export async function generateResetToken(email: string): Promise<string | null> 
   return user ? reset_token : null;
 }
 
-// Reset password with token
 export async function resetPassword(
   token: string,
   newPassword: string
@@ -172,27 +161,23 @@ export async function resetPassword(
   return result !== null;
 }
 
-// Update user's total spent (called after order completion)
 export async function updateUserSpentAndVIP(
   userId: string,
   orderTotal: number
 ): Promise<void> {
   await transaction(async (client) => {
-    // Update total spent
     await client.query(
       'UPDATE users SET total_spent = total_spent + $1 WHERE id = $2',
       [orderTotal, userId]
     );
 
-    // Check if user should be upgraded to VIP
-    const user = await client.query(
+    const userResult = await client.query(
       'SELECT total_spent FROM users WHERE id = $1',
       [userId]
     );
 
-    const totalSpent = user.rows[0]?.total_spent || 0;
+    const totalSpent = userResult.rows[0]?.total_spent || 0;
 
-    // VIP tier logic
     let vipTier: string | null = null;
     let isVip = false;
 
@@ -219,14 +204,12 @@ export async function updateUserSpentAndVIP(
   });
 }
 
-// Get VIP users
 export async function getVIPUsers(): Promise<User[]> {
   return await query<User>(
     'SELECT * FROM users WHERE is_vip = TRUE ORDER BY total_spent DESC'
   );
 }
 
-// Get user count by tier
 export async function getUserStats() {
   const stats = await query<{ vip_tier: string; count: number }>(
     `SELECT vip_tier, COUNT(*) as count

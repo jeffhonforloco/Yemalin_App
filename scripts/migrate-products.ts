@@ -15,7 +15,7 @@
  */
 
 import { products, comingSoonProducts } from '../data/products';
-import { pool, query } from '../backend/db/connection';
+import { query, getDb } from '../backend/db/connection';
 
 interface ProductData {
   id: string;
@@ -156,6 +156,7 @@ async function main() {
     console.error('\n❌ Migration failed:', error);
     process.exit(1);
   } finally {
+    const pool = getDb();
     await pool.end();
   }
 }

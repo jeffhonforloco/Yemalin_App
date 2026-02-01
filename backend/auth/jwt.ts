@@ -1,7 +1,10 @@
-import jwt from 'jsonwebtoken';
+import * as jose from 'jose';
 
-// JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+  return new TextEncoder().encode(secret);
+};
+
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
 
@@ -17,54 +20,75 @@ export interface TokenPair {
   refreshToken: string;
 }
 
-// Generate access token
-export function generateAccessToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-    issuer: 'yemalin-api',
-    audience: 'yemalin-app',
-  });
+function parseExpiration(exp: string): number {
+  const match = exp.match(/^(\d+)([smhd])$/);
+  if (!match) return 7 * 24 * 60 * 60;
+  
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  
+  switch (unit) {
+    case 's': return value;
+    case 'm': return value * 60;
+    case 'h': return value * 60 * 60;
+    case 'd': return value * 24 * 60 * 60;
+    default: return 7 * 24 * 60 * 60;
+  }
 }
 
-// Generate refresh token
-export function generateRefreshToken(payload: JWTPayload): string {
-  return jwt.sign(
-    { userId: payload.userId },
-    JWT_SECRET,
-    {
-      expiresIn: JWT_REFRESH_EXPIRES_IN,
-      issuer: 'yemalin-api',
-      audience: 'yemalin-app',
-    }
-  );
+export async function generateAccessToken(payload: JWTPayload): Promise<string> {
+  const secret = getJwtSecret();
+  const expiresIn = parseExpiration(JWT_EXPIRES_IN);
+  
+  return await new jose.SignJWT({ ...payload })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setIssuer('yemalin-api')
+    .setAudience('yemalin-app')
+    .setExpirationTime(Math.floor(Date.now() / 1000) + expiresIn)
+    .sign(secret);
 }
 
-// Generate both tokens
-export function generateTokenPair(payload: JWTPayload): TokenPair {
-  return {
-    accessToken: generateAccessToken(payload),
-    refreshToken: generateRefreshToken(payload),
-  };
+export async function generateRefreshToken(payload: JWTPayload): Promise<string> {
+  const secret = getJwtSecret();
+  const expiresIn = parseExpiration(JWT_REFRESH_EXPIRES_IN);
+  
+  return await new jose.SignJWT({ userId: payload.userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setIssuer('yemalin-api')
+    .setAudience('yemalin-app')
+    .setExpirationTime(Math.floor(Date.now() / 1000) + expiresIn)
+    .sign(secret);
 }
 
-// Verify access token
-export function verifyAccessToken(token: string): JWTPayload | null {
+export async function generateTokenPair(payload: JWTPayload): Promise<TokenPair> {
+  const [accessToken, refreshToken] = await Promise.all([
+    generateAccessToken(payload),
+    generateRefreshToken(payload),
+  ]);
+  
+  return { accessToken, refreshToken };
+}
+
+export async function verifyAccessToken(token: string): Promise<JWTPayload | null> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const secret = getJwtSecret();
+    const { payload } = await jose.jwtVerify(token, secret, {
       issuer: 'yemalin-api',
       audience: 'yemalin-app',
     });
 
-    if (typeof decoded === 'object' && decoded !== null) {
-      return decoded as JWTPayload;
+    if (payload && typeof payload === 'object') {
+      return payload as unknown as JWTPayload;
     }
 
     return null;
   } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      console.warn('Token expired:', error.message);
-    } else if (error instanceof jwt.JsonWebTokenError) {
-      console.warn('Invalid token:', error.message);
+    if (error instanceof jose.errors.JWTExpired) {
+      console.warn('Token expired');
+    } else if (error instanceof jose.errors.JWTInvalid) {
+      console.warn('Invalid token');
     } else {
       console.error('Token verification error:', error);
     }
@@ -72,16 +96,16 @@ export function verifyAccessToken(token: string): JWTPayload | null {
   }
 }
 
-// Verify refresh token
-export function verifyRefreshToken(token: string): { userId: string } | null {
+export async function verifyRefreshToken(token: string): Promise<{ userId: string } | null> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const secret = getJwtSecret();
+    const { payload } = await jose.jwtVerify(token, secret, {
       issuer: 'yemalin-api',
       audience: 'yemalin-app',
     });
 
-    if (typeof decoded === 'object' && decoded !== null && 'userId' in decoded) {
-      return { userId: decoded.userId as string };
+    if (payload && typeof payload === 'object' && 'userId' in payload) {
+      return { userId: payload.userId as string };
     }
 
     return null;
@@ -91,7 +115,6 @@ export function verifyRefreshToken(token: string): { userId: string } | null {
   }
 }
 
-// Extract token from Authorization header
 export function extractTokenFromHeader(authHeader?: string | null): string | null {
   if (!authHeader) return null;
 
@@ -103,15 +126,14 @@ export function extractTokenFromHeader(authHeader?: string | null): string | nul
   return parts[1];
 }
 
-// Decode token without verification (useful for expired token inspection)
-export function decodeToken(token: string): JWTPayload | null {
+export async function decodeToken(token: string): Promise<JWTPayload | null> {
   try {
-    const decoded = jwt.decode(token);
+    const decoded = jose.decodeJwt(token);
     if (typeof decoded === 'object' && decoded !== null) {
-      return decoded as JWTPayload;
+      return decoded as unknown as JWTPayload;
     }
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

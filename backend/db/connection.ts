@@ -1,60 +1,44 @@
-import { Pool, PoolConfig } from 'pg';
+import { Pool } from '@neondatabase/serverless';
 
-// Database configuration
-const dbConfig: PoolConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'yemalin_prod',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-
-  // Connection pool settings
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // How long a client is allowed to remain idle
-  connectionTimeoutMillis: 10000, // How long to wait for a connection
-
-  // SSL configuration for production
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : undefined,
+const getDatabaseUrl = () => {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    console.warn('DATABASE_URL not set, using placeholder');
+    return 'postgresql://placeholder:placeholder@placeholder/placeholder';
+  }
+  return url;
 };
 
-// Create the connection pool
-export const pool = new Pool(dbConfig);
+let poolInstance: Pool | null = null;
 
-// Test the connection
-pool.on('connect', () => {
-  console.log('✓ Database connected successfully');
-});
+const getPool = () => {
+  if (!poolInstance) {
+    poolInstance = new Pool({ connectionString: getDatabaseUrl() });
+  }
+  return poolInstance;
+};
 
-pool.on('error', (err) => {
-  console.error('✗ Unexpected database error:', err);
-  process.exit(-1);
-});
-
-// Helper function to execute queries with error handling
 export async function query<T = any>(
   text: string,
   params?: any[]
 ): Promise<T[]> {
   const start = Date.now();
   try {
+    const pool = getPool();
     const result = await pool.query(text, params);
     const duration = Date.now() - start;
 
-    // Log slow queries in development
-    if (process.env.NODE_ENV === 'development' && duration > 1000) {
+    if (duration > 1000) {
       console.warn(`⚠ Slow query (${duration}ms):`, text);
     }
 
-    return result.rows;
+    return result.rows as T[];
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
   }
 }
 
-// Helper for single row queries
 export async function queryOne<T = any>(
   text: string,
   params?: any[]
@@ -63,14 +47,22 @@ export async function queryOne<T = any>(
   return rows[0] || null;
 }
 
-// Transaction helper
 export async function transaction<T>(
-  callback: (client: any) => Promise<T>
+  callback: (client: {
+    query: (text: string, params?: any[]) => Promise<{ rows: any[] }>;
+  }) => Promise<T>
 ): Promise<T> {
+  const pool = getPool();
   const client = await pool.connect();
+  
   try {
     await client.query('BEGIN');
-    const result = await callback(client);
+    const result = await callback({
+      query: async (text: string, params?: any[]) => {
+        const res = await client.query(text, params);
+        return { rows: res.rows };
+      }
+    });
     await client.query('COMMIT');
     return result;
   } catch (error) {
@@ -81,19 +73,4 @@ export async function transaction<T>(
   }
 }
 
-// Graceful shutdown
-export async function closePool(): Promise<void> {
-  await pool.end();
-  console.log('✓ Database pool closed');
-}
-
-// Handle process termination
-process.on('SIGINT', async () => {
-  await closePool();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await closePool();
-  process.exit(0);
-});
+export { getPool as getDb };

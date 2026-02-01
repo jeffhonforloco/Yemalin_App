@@ -75,19 +75,16 @@ export interface CreateOrderInput {
   stripe_payment_intent_id?: string;
 }
 
-// Generate unique order number
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `YM-${timestamp}-${random}`;
 }
 
-// Create new order
 export async function createOrder(input: CreateOrderInput): Promise<OrderWithItems> {
   return await transaction(async (client) => {
     const orderNumber = generateOrderNumber();
 
-    // Create order
     const orderResult = await client.query(
       `INSERT INTO orders (
         user_id, order_number, status, subtotal, shipping_cost, tax, total,
@@ -120,7 +117,6 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithIte
 
     const order = orderResult.rows[0];
 
-    // Create order items and update stock
     const orderItems: OrderItem[] = [];
     for (const item of input.items) {
       const itemResult = await client.query(
@@ -140,20 +136,18 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithIte
           item.price * item.quantity,
         ]
       );
-      orderItems.push(itemResult.rows[0]);
+      orderItems.push(itemResult.rows[0] as OrderItem);
 
-      // Decrement product stock
       await decrementProductStock(item.product_id, item.size, item.quantity);
     }
 
     return {
       ...order,
       items: orderItems,
-    };
+    } as OrderWithItems;
   });
 }
 
-// Get order by ID
 export async function getOrderById(orderId: string): Promise<OrderWithItems | null> {
   const order = await queryOne<Order>(
     'SELECT * FROM orders WHERE id = $1',
@@ -173,7 +167,6 @@ export async function getOrderById(orderId: string): Promise<OrderWithItems | nu
   };
 }
 
-// Get order by order number
 export async function getOrderByNumber(orderNumber: string): Promise<OrderWithItems | null> {
   const order = await queryOne<Order>(
     'SELECT * FROM orders WHERE order_number = $1',
@@ -193,7 +186,6 @@ export async function getOrderByNumber(orderNumber: string): Promise<OrderWithIt
   };
 }
 
-// Get orders by user
 export async function getOrdersByUser(userId: string): Promise<OrderWithItems[]> {
   const orders = await query<Order>(
     'SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC',
@@ -220,7 +212,6 @@ export async function getOrdersByUser(userId: string): Promise<OrderWithItems[]>
   }));
 }
 
-// Update order status
 export async function updateOrderStatus(
   orderId: string,
   status: Order['status'],
@@ -252,7 +243,6 @@ export async function updateOrderStatus(
   );
 }
 
-// Update payment status
 export async function updatePaymentStatus(
   orderId: string,
   paymentStatus: Order['payment_status'],
@@ -267,38 +257,33 @@ export async function updatePaymentStatus(
       [paymentStatus, stripeChargeId || null, orderId]
     );
 
-    const updatedOrder = result.rows[0];
+    const updatedOrder = result.rows[0] as Order;
 
-    // If payment is successful, update order status and user stats
     if (paymentStatus === 'paid' && updatedOrder) {
       await client.query(
         "UPDATE orders SET status = 'processing' WHERE id = $1",
         [orderId]
       );
 
-      // Update user's total spent if they're logged in
       if (updatedOrder.user_id) {
         await updateUserSpentAndVIP(updatedOrder.user_id, updatedOrder.total);
       }
     }
 
-    return result.rows[0];
+    return result.rows[0] as Order;
   });
 
   return order || null;
 }
 
-// Cancel order (restore stock)
 export async function cancelOrder(orderId: string): Promise<Order | null> {
   return await transaction(async (client) => {
-    // Get order items
-    const items = await client.query(
+    const itemsResult = await client.query(
       'SELECT * FROM order_items WHERE order_id = $1',
       [orderId]
     );
 
-    // Restore stock for each item
-    for (const item of items.rows) {
+    for (const item of itemsResult.rows) {
       await client.query(
         `UPDATE product_sizes
          SET stock = stock + $1
@@ -312,7 +297,6 @@ export async function cancelOrder(orderId: string): Promise<Order | null> {
       );
     }
 
-    // Update order status
     const result = await client.query(
       `UPDATE orders
        SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
@@ -321,11 +305,10 @@ export async function cancelOrder(orderId: string): Promise<Order | null> {
       [orderId]
     );
 
-    return result.rows[0] || null;
+    return (result.rows[0] as Order) || null;
   });
 }
 
-// Get all orders (admin)
 export async function getAllOrders(
   limit: number = 50,
   offset: number = 0
@@ -357,7 +340,6 @@ export async function getAllOrders(
   }));
 }
 
-// Get order statistics
 export async function getOrderStats() {
   const stats = await queryOne<{
     total: number;
@@ -393,7 +375,6 @@ export async function getOrderStats() {
   };
 }
 
-// Get recent orders
 export async function getRecentOrders(limit: number = 10): Promise<Order[]> {
   return await query<Order>(
     `SELECT * FROM orders
