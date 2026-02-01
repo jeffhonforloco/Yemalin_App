@@ -6,7 +6,8 @@
     "start": "bunx rork start -p fbd7gm9voh9k8j6y89shf --tunnel",
     "start-web": "bunx rork start -p fbd7gm9voh9k8j6y89shf --web --tunnel",
     "start-web-dev": "DEBUG=expo* bunx rork start -p fbd7gm9voh9k8j6y89shf --web --tunnel",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build": "expo export -p web"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
