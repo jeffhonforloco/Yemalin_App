@@ -29,19 +29,20 @@ export const REMINDER_SCHEDULES: ReminderSchedule[] = [
 ];
 
 export class ReminderSystem {
-  private static checkInterval: NodeJS.Timeout | null = null;
+  private static checkInterval: ReturnType<typeof setInterval> | null = null;
   private static isRunning = false;
 
   static async start() {
     if (this.isRunning) return;
+    if (typeof window === 'undefined') return; // Skip during SSR/build
     
     this.isRunning = true;
     console.log('🔔 Reminder system started');
     
     // Check for carts needing reminders every 5 minutes
-    this.checkInterval = setInterval(async () => {
-      await this.processReminders();
-    }, 5 * 60 * 1000) as any; // 5 minutes
+    this.checkInterval = setInterval(() => {
+      this.processReminders();
+    }, 5 * 60 * 1000); // 5 minutes
 
     // Run immediately on start
     await this.processReminders();
