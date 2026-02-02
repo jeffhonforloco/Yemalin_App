@@ -48,10 +48,12 @@ export default function HomeScreen() {
       }),
     ]).start();
     
-    // Countdown timer
-    const timer = setInterval(() => {
-      setCountdown(prev => prev > 0 ? prev - 1 : 0);
-    }, 1000);
+    // Countdown timer (avoid timers on web builds like Cloudflare Pages)
+    const timer = Platform.OS !== "web"
+      ? setInterval(() => {
+          setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000)
+      : null;
     
     // First order discount popup (Supreme strategy)
     if (marketing.firstOrderDiscount.enabled) {
@@ -61,12 +63,14 @@ export default function HomeScreen() {
       }, marketing.firstOrderDiscount.popupTiming * 1000);
       
       return () => {
-        clearInterval(timer);
+        if (timer) clearInterval(timer);
         clearTimeout(popupTimer);
       };
     }
     
-    return () => clearInterval(timer);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   

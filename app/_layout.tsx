@@ -11,7 +11,11 @@ import { VIPProvider } from "@/providers/VIPProvider";
 import Head from "expo-router/head";
 import { trpc, trpcClient } from "@/lib/trpc";
 
-SplashScreen.preventAutoHideAsync();
+if (Platform.OS !== "web") {
+  SplashScreen.preventAutoHideAsync().catch((e) => {
+    console.log("[splash] preventAutoHideAsync error", e);
+  });
+}
 
 const queryClient = new QueryClient();
 
@@ -258,7 +262,11 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   useEffect(() => {
-    SplashScreen.hideAsync();
+    if (Platform.OS !== "web") {
+      SplashScreen.hideAsync().catch((e) => {
+        console.log("[splash] hideAsync error", e);
+      });
+    }
   }, []);
 
   return (
