@@ -10,7 +10,7 @@ import {
   Platform,
   Pressable,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Filter, ShoppingBag, X, Star } from "lucide-react-native";
@@ -87,7 +87,7 @@ export default function ShopScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -306,7 +306,7 @@ export default function ShopScreen() {
         </View>
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

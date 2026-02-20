@@ -280,17 +280,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Admin Access - Hidden, triple tap logo */}
-        <TouchableOpacity
-          style={styles.adminAccess}
-          onPress={() => {
-            // Simple admin access - in production, add proper auth
-            router.push('/admin');
-          }}
-        >
-          <Text style={styles.adminAccessText}>Admin Dashboard</Text>
-        </TouchableOpacity>
-
         {/* Logout */}
         <TouchableOpacity 
           style={[styles.logoutButton, isWeb && isLargeScreen && styles.webLogoutButton]} 

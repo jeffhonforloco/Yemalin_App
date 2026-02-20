@@ -12,7 +12,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+
 import { router } from "expo-router";
 import { ArrowRight, Clock, Users, Star, Mail, Crown, Zap, Calendar, Lock } from "lucide-react-native";
 import { products, comingSoonProducts } from "@/data/products";
@@ -22,7 +22,7 @@ const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const [email, setEmail] = useState<string>("");
-  const [countdown, setCountdown] = useState<number>(72 * 60 * 60); // 72 hours in seconds
+  const [countdown, setCountdown] = useState<number>(72 * 60 * 60);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0.95));
   const [showFirstOrderPopup, setShowFirstOrderPopup] = useState<boolean>(false);
@@ -48,12 +48,9 @@ export default function HomeScreen() {
       }),
     ]).start();
     
-    // Countdown timer (avoid timers on web builds like Cloudflare Pages)
-    const timer = Platform.OS !== "web"
-      ? setInterval(() => {
-          setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-        }, 1000)
-      : null;
+    const timer = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
     
     // First order discount popup (Supreme strategy)
     if (marketing.firstOrderDiscount.enabled) {
@@ -63,13 +60,13 @@ export default function HomeScreen() {
       }, marketing.firstOrderDiscount.popupTiming * 1000);
       
       return () => {
-        if (timer) clearInterval(timer);
+        clearInterval(timer);
         clearTimeout(popupTimer);
       };
     }
     
     return () => {
-      if (timer) clearInterval(timer);
+      clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -117,7 +114,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Global Announcement Bar */}
         <View style={styles.announcementBar}>
@@ -176,9 +173,9 @@ export default function HomeScreen() {
           <View style={styles.heroOverlay}>
             <Text style={styles.heroTitle}>FINAL PIECES</Text>
             <Text style={styles.heroSubtitle}>Last chance before restock</Text>
-            <TouchableOpacity style={styles.shopNowButton}>
+            <View style={styles.shopNowButton}>
               <Text style={styles.shopNowText}>SHOP NOW</Text>
-            </TouchableOpacity>
+            </View>
           </View>
         </TouchableOpacity>
 
@@ -376,9 +373,11 @@ export default function HomeScreen() {
           </View>
         </View>
         
-        {/* First Order Discount Popup */}
-        {showFirstOrderPopup && (
-          <View style={styles.popupOverlay}>
+      </ScrollView>
+
+      {/* First Order Discount Popup */}
+      {showFirstOrderPopup && (
+        <View style={styles.popupOverlay}>
             <Animated.View style={[styles.popupContainer, { opacity: fadeAnim }]}>
               <TouchableOpacity 
                 style={styles.popupClose}
@@ -411,11 +410,10 @@ export default function HomeScreen() {
               </TouchableOpacity>
               
               <Text style={styles.popupNote}>Limited time • New customers only</Text>
-            </Animated.View>
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          </Animated.View>
+        </View>
+      )}
+    </View>
   );
 }
 
