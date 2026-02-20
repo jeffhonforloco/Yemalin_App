@@ -123,7 +123,7 @@ export default function OrderHistoryScreen() {
             </Text>
             <TouchableOpacity
               style={styles.shopButton}
-              onPress={() => router.push("/(tabs)/shop")}
+              onPress={() => router.push("/(tabs)/shop" as any)}
             >
               <Text style={styles.shopButtonText}>START SHOPPING</Text>
             </TouchableOpacity>

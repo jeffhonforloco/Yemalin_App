@@ -104,7 +104,7 @@ export default function ShopScreen() {
         <Text style={styles.title}>SHOP</Text>
         <TouchableOpacity 
           style={styles.cartButton}
-          onPress={() => router.push("/cart")}
+          onPress={() => router.push("/cart" as any)}
         >
           <ShoppingBag size={22} color="#1a1a1a" strokeWidth={1.5} />
           {itemCount > 0 && (
@@ -272,7 +272,7 @@ export default function ShopScreen() {
                 styles.productCard,
                 pressed && styles.productCardPressed
               ]}
-              onPress={() => router.push(`/product/${product.id}`)}
+              onPress={() => router.push(`/product/${product.id}` as any)}
             >
               <View style={styles.imageContainer}>
                 {product.stock <= 5 && product.stock > 0 && (

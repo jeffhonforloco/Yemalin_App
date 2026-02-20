@@ -29,10 +29,10 @@ export default function CartScreen() {
     }
     if (!isAuthenticated) {
       // Navigate to login - user can continue as guest or sign in
-      router.push("/login");
+      router.push("/login" as any);
       return;
     }
-    router.push("/checkout");
+    router.push("/checkout" as any);
   };
 
   const handleQuantityChange = async (id: string, size: string, currentQty: number, change: number) => {
@@ -70,7 +70,7 @@ export default function CartScreen() {
           </Text>
           <TouchableOpacity
             style={styles.shopButton}
-            onPress={() => router.push("/shop")}
+            onPress={() => router.push("/shop" as any)}
           >
             <Text style={styles.shopButtonText}>CONTINUE SHOPPING</Text>
           </TouchableOpacity>

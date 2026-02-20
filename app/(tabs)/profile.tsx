@@ -50,7 +50,7 @@ export default function ProfileScreen() {
   // Redirect to login if not authenticated after loading
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace("/login");
+      router.replace("/login" as any);
     }
   }, [isAuthenticated, isLoading]);
 
@@ -160,17 +160,17 @@ export default function ProfileScreen() {
     {
       icon: Package,
       title: "Order History",
-      onPress: () => router.push("/order-history"),
+      onPress: () => router.push("/order-history" as any),
     },
     {
       icon: Heart,
       title: "Waitlist",
-      onPress: () => router.push("/waitlist"),
+      onPress: () => router.push("/waitlist" as any),
     },
     {
       icon: CreditCard,
       title: "Payment Methods",
-      onPress: () => router.push("/payment-methods"),
+      onPress: () => router.push("/payment-methods" as any),
     },
     {
       icon: Bell,
@@ -182,7 +182,7 @@ export default function ProfileScreen() {
     {
       icon: HelpCircle,
       title: "Help & Support",
-      onPress: () => router.push("/help-support"),
+      onPress: () => router.push("/help-support" as any),
     },
   ];
 
@@ -293,7 +293,7 @@ export default function ProfileScreen() {
                   // On web, we might need to force a page refresh to clear all state
                   window.location.href = '/login';
                 } else {
-                  router.replace("/login");
+                  router.replace("/login" as any);
                 }
               } catch (error) {
                 console.error('Logout error:', error);
@@ -301,7 +301,7 @@ export default function ProfileScreen() {
                 if (Platform.OS === 'web') {
                   window.location.href = '/login';
                 } else {
-                  router.replace("/login");
+                  router.replace("/login" as any);
                 }
               }
             };
@@ -336,7 +336,7 @@ export default function ProfileScreen() {
         <TouchableOpacity
           style={styles.adminAccess}
           onPress={() => {
-            router.push('/admin');
+            router.push('/admin' as any);
           }}
         >
           <Text style={styles.adminAccessText}>ADMIN DASHBOARD</Text>

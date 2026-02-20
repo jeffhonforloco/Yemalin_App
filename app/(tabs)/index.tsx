@@ -163,7 +163,7 @@ export default function HomeScreen() {
         {/* Hero Section */}
         <TouchableOpacity
           style={styles.hero}
-          onPress={() => router.push("/shop")}
+          onPress={() => router.push("/shop" as any)}
           activeOpacity={0.9}
         >
           <Image
@@ -190,7 +190,7 @@ export default function HomeScreen() {
                 style={styles.productCard}
                 onPress={() => {
                   marketing.trackConversion('product_view_from_homepage', { productId: product.id, stock: product.stock });
-                  router.push(`/product/${product.id}`);
+                  router.push(`/product/${product.id}` as any);
                 }}
                 activeOpacity={0.9}
               >
@@ -251,7 +251,7 @@ export default function HomeScreen() {
                   style={styles.comingSoonCard}
                   onPress={() => {
                     marketing.trackConversion('coming_soon_product_clicked', { productId: product.id });
-                    router.push('/waitlist');
+                    router.push('/waitlist' as any);
                   }}
                   activeOpacity={0.8}
                 >
@@ -294,7 +294,7 @@ export default function HomeScreen() {
           </Text>
           <TouchableOpacity
             style={styles.learnMoreButton}
-            onPress={() => router.push("/profile")}
+            onPress={() => router.push("/profile" as any)}
           >
             <Text style={styles.learnMoreText}>LEARN MORE</Text>
           </TouchableOpacity>
@@ -402,7 +402,7 @@ export default function HomeScreen() {
                 onPress={() => {
                   setShowFirstOrderPopup(false);
                   marketing.trackConversion('first_order_popup_claimed', { discount: marketing.firstOrderDiscount.percentage });
-                  router.push('/shop');
+                  router.push('/shop' as any);
                 }}
               >
                 <Text style={styles.popupButtonText}>CLAIM DISCOUNT</Text>

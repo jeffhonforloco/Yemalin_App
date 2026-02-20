@@ -93,7 +93,7 @@ export default function ProductDetailScreen() {
     });
 
     setTimeout(() => {
-      router.push("/cart");
+      router.push("/cart" as any);
     }, 1500);
   };
 
@@ -196,7 +196,7 @@ export default function ProductDetailScreen() {
               <Text style={styles.sectionTitle}>SELECT SIZE</Text>
               <TouchableOpacity 
                 style={styles.sizeGuideButton}
-                onPress={() => router.push("/size-guide")}
+                onPress={() => router.push("/size-guide" as any)}
               >
                 <Ruler size={16} color="#666" />
                 <Text style={styles.sizeGuideText}>Size Guide</Text>

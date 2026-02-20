@@ -66,14 +66,14 @@ function WebNavBar() {
         <View style={styles.webNavRight}>
           <TouchableOpacity 
             style={styles.webNavIcon}
-            onPress={() => router.push("/profile")}
+            onPress={() => router.push("/profile" as any)}
           >
             <User color="#000" size={20} strokeWidth={1.5} />
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.webCartButton}
-            onPress={() => router.push("/cart")}
+            onPress={() => router.push("/cart" as any)}
           >
             <ShoppingBag color="#000" size={20} strokeWidth={1.5} />
             {itemCount > 0 && (
@@ -95,7 +95,7 @@ function CartButton() {
   return (
     <TouchableOpacity 
       style={styles.cartButton}
-      onPress={() => router.push("/cart")}
+      onPress={() => router.push("/cart" as any)}
     >
       <ShoppingBag color="#000" size={24} strokeWidth={1.5} />
       {itemCount > 0 && (

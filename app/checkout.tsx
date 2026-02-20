@@ -54,7 +54,7 @@ export default function CheckoutScreen() {
   React.useEffect(() => {
     if (!isAuthenticated) {
       // Redirect to login if not authenticated, allow back navigation
-      router.replace("/login");
+      router.replace("/login" as any);
     }
   }, [isAuthenticated]);
 
@@ -165,7 +165,7 @@ export default function CheckoutScreen() {
         "Order Confirmed!",
         `Your order has been placed successfully.\nOrder #${orderId}`,
         [
-          { text: "View Orders", onPress: () => router.replace("/order-history") },
+          { text: "View Orders", onPress: () => router.replace("/order-history" as any) },
           { text: "Continue Shopping", onPress: () => router.replace("/") },
         ]
       );

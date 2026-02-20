@@ -22,7 +22,7 @@ export default function AdminAccessButton() {
 
     // Open admin after 3 taps
     if (tapCount >= 2) {
-      router.push('/admin');
+      router.push('/admin' as any);
       setTapCount(0);
     }
   };

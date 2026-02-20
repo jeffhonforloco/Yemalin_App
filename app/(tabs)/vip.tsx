@@ -35,7 +35,7 @@ export default function VIPScreen() {
           </Text>
           <TouchableOpacity 
             style={styles.shopButton}
-            onPress={() => router.push("/login")}
+            onPress={() => router.push("/login" as any)}
           >
             <Text style={styles.shopButtonText}>SIGN IN</Text>
           </TouchableOpacity>
@@ -165,7 +165,7 @@ export default function VIPScreen() {
               <TouchableOpacity 
                 key={product.id} 
                 style={styles.previewCard}
-                onPress={() => router.push("/waitlist")}
+                onPress={() => router.push("/waitlist" as any)}
               >
                 <View style={styles.earlyAccessBadge}>
                   <Sparkles size={12} color="#fff" />
